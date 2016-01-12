@@ -6,8 +6,7 @@
     <string name="password_hint">password</string>
     <string name="login">Log in</string>
     <string name="sign_up">Sign Up</string>
-
-    <string name="google_client_id">249176717954-nng0kusrd5pm4t869o3r47080udb3hqn.apps.googleusercontent.com</string>
+    
     <string name="title_activity_main">MainActivity</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
