@@ -15,15 +15,17 @@
 
     <item android:title="@string/nav_title_account">
         <menu>
-            <item
-                android:id="@+id/nav_settings"
-                android:icon="@drawable/ic_menu_manage"
-                android:title="@string/nav_title_settings" />
-            <!--android:icon="@drawable/ic_menu_share"-->
-            <item
-                android:id="@+id/nav_logout"
-                android:icon="@drawable/ic_menu_logout"
-                android:title="@string/nav_title_signout" />
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/nav_settings"
+                    android:icon="@drawable/ic_menu_manage"
+                    android:title="@string/nav_title_settings" />
+                <!--android:icon="@drawable/ic_menu_share"-->
+                <item
+                    android:id="@+id/nav_logout"
+                    android:icon="@drawable/ic_menu_logout"
+                    android:title="@string/nav_title_signout" />
+            </group>
         </menu>
     </item>
 
