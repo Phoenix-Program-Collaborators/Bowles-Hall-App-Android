@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.support.v7.widget.AppCompatButton;
@@ -15,22 +16,26 @@ import android.support.v7.widget.AppCompatEditText;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 
 import java.util.HashSet;
+import java.util.Map;
 
 
 public class LoginActivity extends AppCompatActivity implements PasswordFragment.PasswordFragmentListener {
 
-    AppCompatButton mLogin;
-    AppCompatButton mSignUp;
     AppCompatAutoCompleteTextView mEmailEdit;
     AppCompatEditText mPassEdit;
+    AppCompatButton mLogin;
+    AppCompatButton mSignUp;
 
-    ProgressDialog dialog;
+    ContentLoadingProgressBar mLoadingBar;
+    TextView mLoadingText;
 
     Firebase rootRef;
 
@@ -38,28 +43,28 @@ public class LoginActivity extends AppCompatActivity implements PasswordFragment
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        dialog = new ProgressDialog(LoginActivity.this);
-        dialog.setIndeterminate(true);
-        dialog.setMessage("Logging you in...");
-
         setContentView(R.layout.activity_login);
 
-        mLogin = (AppCompatButton) findViewById(R.id.login);
-        mSignUp = (AppCompatButton) findViewById(R.id.signup);
         mEmailEdit = (AppCompatAutoCompleteTextView) findViewById(R.id.emailtext);
         mPassEdit = (AppCompatEditText) findViewById(R.id.passwordtext);
+        mLogin = (AppCompatButton) findViewById(R.id.login);
+        mSignUp = (AppCompatButton) findViewById(R.id.signup);
 
-        rootRef = new Firebase("https://incandescent-heat-3625.firebaseio.com/");
+        mLoadingBar = (ContentLoadingProgressBar) findViewById(R.id.loading_bar);
+        mLoadingText = (TextView) findViewById(R.id.loading_text);
 
         mEmailEdit.setAdapter(getEmailAddressAdapter(getApplicationContext()));
         mEmailEdit.setDropDownBackgroundResource(R.drawable.autocomplete_drop_background);
+
+        rootRef = new Firebase("https://incandescent-heat-3625.firebaseio.com/");
 
         mLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (validEmail()) {
-                    dialog.show();
-                    login(mEmailEdit.getText().toString(), mPassEdit.getText().toString());
+                    hideUI();
+                    mLoadingBar.show();
+                    login(mEmailEdit.getText().toString(), mPassEdit.getText().toString(), false);
                 }
             }
         });
@@ -72,6 +77,31 @@ public class LoginActivity extends AppCompatActivity implements PasswordFragment
                 }
             }
         });
+    }
+
+    private void hideUI() {
+        mEmailEdit.setVisibility(View.INVISIBLE);
+        mPassEdit.setVisibility(View.INVISIBLE);
+        mLogin.setVisibility(View.INVISIBLE);
+        mSignUp.setVisibility(View.INVISIBLE);
+    }
+
+    private void showUI() {
+        mEmailEdit.setVisibility(View.VISIBLE);
+        mPassEdit.setVisibility(View.VISIBLE);
+        mLogin.setVisibility(View.VISIBLE);
+        mSignUp.setVisibility(View.VISIBLE);
+    }
+
+    private void loadingProcess(boolean show, String message) {
+        if (show) {
+            mLoadingText.setText(message);
+            mLoadingBar.show();
+            mLoadingText.setVisibility(View.VISIBLE);
+        } else {
+            mLoadingText.setVisibility(View.GONE);
+            mLoadingBar.hide();
+        }
     }
 
     private boolean validEmail() {
@@ -94,20 +124,27 @@ public class LoginActivity extends AppCompatActivity implements PasswordFragment
             return new ArrayAdapter<String>(context, R.layout.autocomplete_list_item, emailArray);
     }
 
-    private void login(String email, String password) {
-        dialog.show();
-        final Intent mainActivity = new Intent(this, MainActivity.class);
+    private void login(final String email, String password, final boolean newUser) {
+        hideUI();
+        loadingProcess(true, "Logging you in...");
         rootRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(AuthData authData) {
-                dialog.hide();
+                if (newUser) {
+                    loadingProcess(true, "Setting up your account...");
+                    Firebase newUserRef = rootRef.child("users").child(authData.getUid());
+                    User user = new User(email, null, email);
+                    newUserRef.setValue(user);
+                }
+                Intent mainActivity = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(mainActivity);
                 finish();
             }
 
             @Override
             public void onAuthenticationError(FirebaseError firebaseError) {
-                dialog.hide();
+                loadingProcess(false, null);
+                showUI();
                 Snackbar.make(mLogin, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
             }
         });
@@ -125,7 +162,7 @@ public class LoginActivity extends AppCompatActivity implements PasswordFragment
             rootRef.createUser(email, confirmedPass, new Firebase.ResultHandler() {
                 @Override
                 public void onSuccess() {
-                    login(email, confirmedPass);
+                    login(email, confirmedPass, true);
                 }
 
                 @Override

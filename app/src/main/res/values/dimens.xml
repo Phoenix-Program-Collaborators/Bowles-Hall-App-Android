@@ -9,4 +9,7 @@
 
     <dimen name="dialog_edittext_side_margin">4dp</dimen>
     <dimen name="nav_header_text">30sp</dimen>
+
+    <dimen name="loading_bar_top_margin">20dp</dimen>
+    <dimen name="loading_text_size">16sp</dimen>
 </resources>
